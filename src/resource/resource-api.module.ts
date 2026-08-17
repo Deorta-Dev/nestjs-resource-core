@@ -19,6 +19,9 @@ export class ResourceApiModule {
     }
     
     if (config.repositoryService) {
+        // Registramos la clase proveída para que Nest resuelva sus dependencias internas
+        // (por ejemplo, los decoradores @RepositoryInject)
+        providers.push(config.repositoryService);
         providers.push({
             provide: REPOSITORY_SERVICE,
             useExisting: config.repositoryService,
