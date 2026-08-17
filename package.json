@@ -1,6 +1,6 @@
 {
   "name": "@deorta-dev/nestjs-resource-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Library for NestJS that standardizes resource management in an API: full CRUD, configurable prefix permissions, authentication-based scope/workspace, filtering, dynamic reports, gateways, and more.",
   "author": "Manuel Deorta <manuel@deorta.dev>",
   "license": "MIT",
