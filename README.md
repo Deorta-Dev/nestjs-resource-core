@@ -2351,22 +2351,82 @@ export class AppModule {}
 
 ## Integración con `@deorta-dev/nestjs-repository-core`
 
-La capa de datos se delega completamente. El repositorio que inyectes debe exponer (al menos) los métodos que el servicio usa, **todos en Observable**:
+La capa de datos se delega completamente. `ResourceApiModule` necesita tener acceso al módulo de base de datos y al servicio/repositorio para inyectarlo en `CommonApiService`.
+
+### Cómo enlazar el repositorio en la configuración
+
+Para vincular el repositorio de `@deorta-dev/nestjs-repository-core`, utilizas las propiedades `repositoryModule` y `repositoryService` en la configuración del recurso.
+
+**Opción 1: Usando el token de inyección directo (Recomendado)**
+Si la librería de repositorios exporta el servicio con un token (por ejemplo, el mismo módulo o una constante), se lo pasas directamente a `repositoryService`. La librería internamente usa `useExisting` para hacer el alias.
 
 ```typescript
-export interface RepositoryService<T> {
-  create(data: Partial<T>): Observable<T>;
-  find(filters: any, options?: any): Observable<T[]>;
-  findOne(filters: any): Observable<T | null>;
-  updateOne(filters: any, data: Partial<T>): Observable<any>;
-  updateMany(filters: any, data: Partial<T>): Observable<any>;
-  deleteOne(filters: any): Observable<any>;
-  count(filters: any): Observable<number>;
-  aggregate(pipeline: any[]): Observable<any[]>;
+// mobile.resource.ts
+import { ResourceApiModule } from '@deorta-dev/nestjs-resource-core';
+import { MobileRepositoryModule } from './repositories/mobile.repository.module';
+
+export const MobileResourceApiModule = ResourceApiModule.register({
+  name: 'mobile',
+  route: 'mobiles',
+  entity: MobileEntity,
+  
+  // 1. Importas el módulo que provee la conexión a la base de datos para este recurso
+  repositoryModule: MobileRepositoryModule, 
+  
+  // 2. Le indicas a la librería con qué token (clase o string) se inyecta el repositorio.
+  // Si usabas @RepositoryInject(MobileRepositoryModule), entonces el token es el módulo:
+  repositoryService: MobileRepositoryModule, 
+});
+```
+
+**Opción 2: Usando un servicio Wrapper**
+Si prefieres envolver la lógica del repositorio en una clase propia de tu proyecto para adaptar los métodos u observables, creas una clase `@Injectable()` y la pasas:
+
+```typescript
+// mobile.repository.service.ts
+@Injectable()
+export class MobileRepositoryService implements IBaseRepositoryService<MobileEntity> {
+  constructor(
+    // Inyectas la dependencia de tu librería externa
+    @RepositoryInject(MobileRepositoryModule) private readonly repo: IBaseRepositoryService<MobileEntity>
+  ) {}
+
+  find(filters) { return this.repo.find(filters); }
+  create(data) { return this.repo.create(data); }
+  // ...
 }
 ```
 
-> Si tu repositorio (p. ej. `@deorta-dev/nestjs-repository-core`) devuelve `Promise`, envuélvelo con `from()` en el adaptador: `from(repo.find(query)).pipe(...)`. La librería **nunca** convierte sus internals a Promise; solo usa `Observable`.
+```typescript
+// mobile.resource.ts
+export const MobileResourceApiModule = ResourceApiModule.register({
+  name: 'mobile',
+  route: 'mobiles',
+  entity: MobileEntity,
+  
+  repositoryModule: MobileRepositoryModule,
+  repositoryService: MobileRepositoryService, // Pasas tu clase Wrapper
+});
+```
+
+### Contrato del Repositorio
+
+El repositorio (sea inyectado directo o por wrapper) debe exponer (al menos) los métodos que el servicio CRUD usa, **todos en Observable** (`IBaseRepositoryService`):
+
+```typescript
+export interface IBaseRepositoryService<T> {
+  create(data: Partial<T>): Observable<T>;
+  find(filters?: any, options?: any): Observable<T[]>;
+  findOne(filters: any, options?: any): Observable<T | null>;
+  update(id: string | any, data: Partial<T>): Observable<T>;
+  delete(id: string | any): Observable<void>;
+  count(filters?: any): Observable<number>;
+  aggregate?(pipeline: any[]): Observable<any[]>;
+  upsert?(query: any, data: any): Observable<T>;
+}
+```
+
+> Si tu repositorio subyacente devuelve `Promise`, envuélvelo con `from()` en un adaptador (Opción 2). La librería **nunca** convierte sus internals a Promise; solo usa `Observable`.
 
 ---
 

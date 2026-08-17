@@ -329,10 +329,16 @@ export class ApiKeyProvider implements AuthResourceApiStrategyProvider<ApiKeyPay
 
 ```typescript
 // control/property/property.resource.ts
+import { PropertyRepositoryModule } from './property.repository.module';
+
 ResourceApiModule.register({
   name: 'property',
   route: 'properties',
   entity: Property,
+
+  // Integración con @deorta-dev/nestjs-repository-core
+  repositoryModule: PropertyRepositoryModule,
+  repositoryService: PropertyRepositoryModule, // El token suele ser el mismo módulo
 
   // Permisos del catálogo (UserPermissionKey), no prefijo por defecto
   permissions: { prefix: 'property' },
@@ -436,10 +442,14 @@ ResourceApiModule.register({
 
 ```typescript
 // control/device/device.resource.ts
+import { DeviceRepositoryModule } from './device.repository.module';
+
 ResourceApiModule.register({
   name: 'device',
   route: 'devices',
   entity: Device,
+  repositoryModule: DeviceRepositoryModule,
+  repositoryService: DeviceRepositoryModule,
   workspace: { field: 'propertyId' },   // puede ser null en inventario
 
   permissions: { prefix: 'device' },
@@ -503,10 +513,14 @@ ResourceApiModule.register({
 
 ```typescript
 // control/mobile/mobile.resource.ts
+import { MobileRepositoryModule } from './mobile.repository.module';
+
 ResourceApiModule.register({
   name: 'mobile',
   route: 'mobiles',
   entity: Mobile,
+  repositoryModule: MobileRepositoryModule,
+  repositoryService: MobileRepositoryModule,
   workspace: { field: 'propertyId', required: true },
 
   permissions: { prefix: 'mobile' },
@@ -620,10 +634,14 @@ export class MobileService extends CommonApiService<Mobile> {
 
 ```typescript
 // control/current-mobile/current-mobile.resource.ts
+import { CurrentMobileRepositoryModule } from './current-mobile.repository.module';
+
 ResourceApiModule.register({
   name: 'currentMobile',
   route: 'current-mobiles',
   entity: CurrentMobile,
+  repositoryModule: CurrentMobileRepositoryModule,
+  repositoryService: CurrentMobileRepositoryModule,
 
   // Solo lectura + reporte
   endpoints: { include: ['list', 'get', 'count', 'report'] },
@@ -835,10 +853,14 @@ export class RealtimeBridge {
 
 ```typescript
 // control/position/position.resource.ts
+import { PositionRepositoryModule } from './position.repository.module';
+
 ResourceApiModule.register({
   name: 'position',
   route: 'positions',
   entity: Position,
+  repositoryModule: PositionRepositoryModule,
+  repositoryService: PositionRepositoryModule,
 
   endpoints: { include: ['list', 'get', 'count', 'report'] },
 
