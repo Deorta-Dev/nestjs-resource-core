@@ -2355,12 +2355,50 @@ La capa de datos se delega completamente. `ResourceApiModule` necesita tener acc
 
 ### Cómo enlazar el repositorio en la configuración
 
-Para vincular el repositorio, el **patrón oficial y más robusto** en NestJS cuando interactúas con librerías de terceros (que utilizan decoradores personalizados de inyección como `@RepositoryInject`), es utilizar una clase **Wrapper**.
+Para vincular el repositorio, la librería soporta **auto-descubrimiento**, un token explícito, o un servicio Wrapper.
 
-Al usar un Wrapper, permites que los decoradores de la librería de datos funcionen de manera nativa sin intentar adivinar los tokens internos (strings/symbols) que generan por debajo.
+**Opción 1: Importar solo el módulo (Auto-descubrimiento - Recomendado)**
+Si tu módulo dinámico (ej. el generado por `RepositoryOrmModule.register()`) exporta el proveedor de repositorio en su array de `exports`, la librería **lo detecta y extrae el token automáticamente**. Esta es la forma más limpia, ¡no necesitas crear nada más!
 
 ```typescript
-// 1. Creas el servicio Wrapper en tu proyecto
+// mobile.resource.ts
+import { ResourceApiModule } from '@deorta-dev/nestjs-resource-core';
+
+// 1. Configuras tu módulo de repositorio
+const MobileRepositoryModule = RepositoryOrmModule.register({
+  entity: MobileEntity,
+  schema: MobileSchema,
+  connectionName: ConnectionNames.OPERATION_MDB
+}); 
+
+export const MobileResourceApiModule = ResourceApiModule.register({
+  name: 'mobile',
+  route: 'mobiles',
+  entity: MobileEntity,
+  
+  // 2. Solo pasas el módulo. La librería buscará el token en los exports.
+  repositoryModule: MobileRepositoryModule, 
+});
+```
+
+**Opción 2: Usar `repositoryToken` explícito**
+Si el auto-descubrimiento no logra encontrar el proveedor (porque el módulo exporta múltiples cosas o tiene una estructura distinta), puedes pasar el token de inyección explícitamente:
+
+```typescript
+export const MobileResourceApiModule = ResourceApiModule.register({
+  name: 'mobile',
+  route: 'mobiles',
+  entity: MobileEntity,
+  repositoryModule: MobileRepositoryModule,
+  // Pasas el mismo token que usa la librería subyacente
+  repositoryToken: getRepositoryToken(MobileEntity), 
+});
+```
+
+**Opción 3: Clase Wrapper manual**
+Si prefieres envolver la lógica del repositorio en una clase propia de tu proyecto para adaptar los métodos u observables, creas una clase `@Injectable()` y usas la propiedad `repositoryService`:
+
+```typescript
 // mobile.repository.service.ts
 import { Injectable } from '@nestjs/common';
 import { IBaseRepositoryService } from '@deorta-dev/nestjs-resource-core';
@@ -2372,29 +2410,20 @@ export class MobileRepositoryService implements IBaseRepositoryService<MobileEnt
     @RepositoryInject(MobileRepositoryModule) private readonly repo: IBaseRepositoryService<MobileEntity>
   ) {}
 
-  // Mapeas los métodos (ya vienen en Observable)
+  // Mapeas los métodos
   find(filters) { return this.repo.find(filters); }
-  findOne(filters) { return this.repo.findOne(filters); }
-  create(data) { return this.repo.create(data); }
-  update(id, data) { return this.repo.update(id, data); }
-  delete(id) { return this.repo.delete(id); }
-  count(filters) { return this.repo.count(filters); }
+  // ...
 }
 ```
 
 ```typescript
-// 2. Lo conectas en la configuración del recurso
 // mobile.resource.ts
 export const MobileResourceApiModule = ResourceApiModule.register({
   name: 'mobile',
   route: 'mobiles',
   entity: MobileEntity,
-  
-  // Importas el módulo que provee la conexión a la base de datos
   repositoryModule: MobileRepositoryModule,
-  // Le pasas tu clase Wrapper. La librería se encargará de instanciarla 
-  // y resolver sus inyecciones internas automáticamente.
-  repositoryService: MobileRepositoryService, 
+  repositoryService: MobileRepositoryService, // Le pasas tu clase Wrapper
 });
 ```
 

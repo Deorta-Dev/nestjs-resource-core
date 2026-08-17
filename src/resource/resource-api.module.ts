@@ -18,9 +18,23 @@ export class ResourceApiModule {
         imports.push(config.repositoryModule);
     }
     
-    if (config.repositoryService) {
-        // Registramos la clase proveída para que Nest resuelva sus dependencias internas
-        // (por ejemplo, los decoradores @RepositoryInject)
+    if (config.repositoryToken) {
+        providers.push({
+            provide: REPOSITORY_SERVICE,
+            useExisting: config.repositoryToken,
+        });
+    } else if (config.repositoryModule && config.repositoryModule.exports?.length) {
+        // Auto-descubrimiento del token desde el módulo dinámico exportado
+        let token = config.repositoryModule.exports[0];
+        if (typeof token === 'object' && token.provide) {
+            token = token.provide;
+        }
+        providers.push({
+            provide: REPOSITORY_SERVICE,
+            useExisting: token,
+        });
+    } else if (config.repositoryService) {
+        // Wrapper manual
         providers.push(config.repositoryService);
         providers.push({
             provide: REPOSITORY_SERVICE,

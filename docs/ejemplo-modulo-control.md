@@ -337,8 +337,7 @@ ResourceApiModule.register({
   entity: Property,
 
   // Integración con @deorta-dev/nestjs-repository-core
-  repositoryModule: PropertyRepositoryModule,
-  repositoryService: PropertyRepositoryService, // Wrapper implementado según el README
+  repositoryModule: PropertyRepositoryModule, // Extrae el token automáticamente
 
   // Permisos del catálogo (UserPermissionKey), no prefijo por defecto
   permissions: { prefix: 'property' },
@@ -449,7 +448,6 @@ ResourceApiModule.register({
   route: 'devices',
   entity: Device,
   repositoryModule: DeviceRepositoryModule,
-  repositoryService: DeviceRepositoryService, // Wrapper implementado según el README
   workspace: { field: 'propertyId' },   // puede ser null en inventario
 
   permissions: { prefix: 'device' },
@@ -520,7 +518,6 @@ ResourceApiModule.register({
   route: 'mobiles',
   entity: Mobile,
   repositoryModule: MobileRepositoryModule,
-  repositoryService: MobileRepositoryService, // Wrapper implementado según el README
   workspace: { field: 'propertyId', required: true },
 
   permissions: { prefix: 'mobile' },
@@ -641,7 +638,6 @@ ResourceApiModule.register({
   route: 'current-mobiles',
   entity: CurrentMobile,
   repositoryModule: CurrentMobileRepositoryModule,
-  repositoryService: CurrentMobileRepositoryService, // Wrapper implementado según el README
 
   // Solo lectura + reporte
   endpoints: { include: ['list', 'get', 'count', 'report'] },
@@ -860,7 +856,6 @@ ResourceApiModule.register({
   route: 'positions',
   entity: Position,
   repositoryModule: PositionRepositoryModule,
-  repositoryService: PositionRepositoryService, // Wrapper implementado según el README
 
   endpoints: { include: ['list', 'get', 'count', 'report'] },
 

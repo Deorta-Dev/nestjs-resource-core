@@ -85,6 +85,7 @@ export interface ResourceConfig<T = any> {
   basePath?: string;
   entity: any;
   repositoryService?: any;
+  repositoryToken?: any;
   repositoryModule?: any;
   permissions?: { prefix?: string; defaults?: Record<string, string[]> };
   actions?: Record<string, { permission?: string | string[] }>;
